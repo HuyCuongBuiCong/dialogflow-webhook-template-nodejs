@@ -16,20 +16,62 @@
 process.env.DEBUG = 'actions-on-google:*';
 const { DialogflowApp } = require('actions-on-google');
 const functions = require('firebase-functions');
+const admin = require("firebase-admin");
+var serviceAccount = require('./innovationsmartoffice-firebase-adminsdk-2loka-776a2c4a4c.json');
 
-exports.yourAction = functions.https.onRequest((request, response) => {
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: 'https://innovationsmartoffice.firebaseio.com/'
+});
+
+exports.innovationSmartOfficeController = functions.https.onRequest((request, response) => {
   const app = new DialogflowApp({request, response});
-  console.log('Request headers: ' + JSON.stringify(request.headers));
-  console.log('Request body: ' + JSON.stringify(request.body));
+  const WELCOME_ACTION = 'input.welcome';
+  const LIGHT_ACTION = 'input.light-control';
 
-  // Fulfill action business logic
-  function responseHandler (app) {
-    // Complete your fulfillment logic and send a response
-    app.tell('Hello, World!');
+  function welcomeIntent (app) {
+    app.ask('Welcome to Innovation Smart Office! How can I help you ?',
+    ['I\'m ready for the first request from you',
+      'Are there any request ?',
+      'If not we can stop here. See you soon.']);
+  }
+
+  function lightIntent (app) {
+    let status = app.getArgument('status');
+    let color = app.getArgument('color');
+    storeLightMetaData(status, color);
+    app.ask('The ' + color + ' light is turned ' + status + ".");
+  }
+
+  function storeLightMetaData(status, color) {
+    let color_pin_number = 1;
+    let status_code = 1;
+    switch (color.toString().trim()) {
+      case 'red':
+        color_pin_number = 7;
+        break;
+      case 'yellow':
+        color_pin_number = 3;
+        break;
+      case 'blue':
+        color_pin_number = 4;
+        break;
+      default:
+        break;
+    }
+    if (status.toString().trim() == 'on') {
+      status_code = 0;
+    } 
+    let db = admin.database();
+    let light = db.ref('controls/lights/' + color_pin_number);
+    light.update({
+      "value": status_code
+    });
   }
 
   const actionMap = new Map();
-  actionMap.set('input.welcome', responseHandler);
+  actionMap.set(WELCOME_ACTION, welcomeIntent);
+  actionMap.set(LIGHT_ACTION, lightIntent);
 
   app.handleRequest(actionMap);
 });
