@@ -28,12 +28,30 @@ exports.innovationSmartOfficeController = functions.https.onRequest((request, re
   const app = new DialogflowApp({request, response});
   const WELCOME_ACTION = 'input.welcome';
   const LIGHT_ACTION = 'input.light-control';
+  const LIGHT_ACTION_ALL = 'input.light-control-all';
 
   function welcomeIntent (app) {
     app.ask('Welcome to Innovation Smart Office! How can I help you ?',
     ['I\'m ready for the first request from you',
       'Are there any request ?',
       'If not we can stop here. See you soon.']);
+  }
+
+  function lightIntentAll(app) {
+    let status = app.getArgument('status');
+    let status_code = 1; //off
+    if (status.toString().trim() == 'on') {
+      status_code = 0;
+    } 
+    let db = admin.database();
+    let light1 = db.ref('controls/lights/' + color_pin_number);
+    light1.update({
+      "value": status_code
+    });
+    let light2 = db.ref('controls/lights/' + color_pin_number);
+    light2.update({
+      "value": status_code
+    });
   }
 
   function lightIntent (app) {
@@ -69,6 +87,7 @@ exports.innovationSmartOfficeController = functions.https.onRequest((request, re
   const actionMap = new Map();
   actionMap.set(WELCOME_ACTION, welcomeIntent);
   actionMap.set(LIGHT_ACTION, lightIntent);
+  actionMap.set(LIGHT_ACTION_ALL, lightIntentAll);
 
   app.handleRequest(actionMap);
 });
