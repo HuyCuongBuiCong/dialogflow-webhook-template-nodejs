@@ -45,16 +45,13 @@ exports.innovationSmartOfficeController = functions.https.onRequest((request, re
 
   function storeLightMetaData(status, color) {
     let color_pin_number = 1;
-    let status_code = 1;
+    let status_code = 1; //off
     switch (color.toString().trim()) {
       case 'red':
         color_pin_number = 7;
         break;
       case 'yellow':
-        color_pin_number = 3;
-        break;
-      case 'blue':
-        color_pin_number = 4;
+        color_pin_number = 11;
         break;
       default:
         break;
